@@ -21,6 +21,88 @@ Le projet possède deux configurations principales pour la base de données : Mo
 
 ---
 
+### cURL Commands for Testing Endpoints
+
+#### 1. **Create a New Course**
+
+To create a new course, use the following `POST` request:
+
+```bash
+curl -X POST http://localhost:3000/api/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+        "title": "Introduction to Docker",
+        "description": "Learn how to containerize applications using Docker and improve your development workflow",
+        "instructor": "Alex Johnson",
+        "duration": "4 weeks"
+      }'
+```
+
+#### 2. **Create Another Course**
+
+```bash
+curl -X POST http://localhost:3000/api/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+        "title": "Continuous Integration with Jenkins",
+        "description": "Master the principles of CI/CD and automate testing and deployments using Jenkins",
+        "instructor": "Sarah Lee",
+        "duration": "6 weeks"
+      }'
+```
+
+#### 3. **Create Another Course**
+
+```bash
+curl -X POST http://localhost:3000/api/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+        "title": "Kubernetes for Production Environments",
+        "description": "Learn how to manage and scale containerized applications in production using Kubernetes",
+        "instructor": "Daniel Green",
+        "duration": "8 weeks"
+      }'
+```
+
+#### 4. **Create a New Student**
+
+To create a new student, use the following `POST` request:
+
+```bash
+curl -X POST http://localhost:3000/api/students \
+  -H "Content-Type: application/json" \
+  -d '{
+        "firstName": "Oussama",
+        "lastName": "EL-AMRANI",
+        "email": "elamranioussama01@gmail.com",
+        "phoneNumber": "1234567890"
+      }'
+```
+
+#### 5. **Retrieve All Students**
+
+To retrieve all students, use the following `GET` request:
+
+```bash
+curl -X GET http://localhost:3000/api/students
+```
+
+#### 6. **Retrieve All Students Again**
+
+```bash
+curl -X GET http://localhost:3000/api/students
+```
+
+#### 7. **Retrieve a Specific Student by ID**
+
+To retrieve a student by their ID, use the following `GET` request with the student's ID (e.g., `677ae2218dd6c55b4765b4b6`):
+
+```bash
+curl -X GET http://localhost:3000/api/students/677ae2218dd6c55b4765b4b6
+```
+
+---
+
 ## Questions sur les Routes (courseRoutes.js)
 
 - **Pourquoi séparer les routes dans différents fichiers ?**
@@ -49,3 +131,5 @@ Le projet possède deux configurations principales pour la base de données : Mo
 ## Questions sur les Services (mongoService.js)
 
 - **Pourquoi créer des services séparés ?**
+
+---
