@@ -2,18 +2,149 @@
 // Réponse:
 // Question : Pourquoi séparer la logique métier des routes ?
 // Réponse :
+const express = require("express");
+const { ObjectId } = require("mongodb");
+const { getDb } = require("../config/db");
+const mongoService = require("../services/mongoService");
+const redisService = require("../services/redisService");
 
-const { ObjectId } = require('mongodb');
-const db = require('../config/db');
-const mongoService = require('../services/mongoService');
-const redisService = require('../services/redisService');
-
+/**
+ * Create a new course
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
 async function createCourse(req, res) {
-  // TODO: Implémenter la création d'un cours
-  // Utiliser les services pour la logique réutilisable
+  try {
+    const { title, description, instructor, duration } = req.body;
+
+    // TODO: create a separate function that validate that
+    if (!title || !description || !instructor || !duration) {
+      res.status(400).json({
+        error: "Title, description, instructor, and duration are required.",
+      });
+      return;
+    }
+
+    const newCourse = await mongoService.createDocument(
+      getDb().collection("courses"),
+      {
+        title,
+        description,
+        instructor,
+        duration,
+        createdAt: new Date(),
+      }
+    );
+
+    res
+      .status(201)
+      .json({ message: "Course created successfully.", data: newCourse });
+  } catch (error) {
+    console.error("Error creating course:", error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+}
+
+/**
+ * Retrieves a single course by its ID.
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+async function getCourse(req, res) {
+  try {
+    const { id } = req.params;
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({ error: "Invalid course ID." });
+      return;
+    }
+    console.log(`getCourse ${id}`);
+
+    const course = await mongoService.findOneById(
+      getDb().collection("courses"),
+      id
+    );
+
+    if (!course) {
+      res.status(404).json({ error: "course not found" });
+      return;
+    }
+
+    res
+      .status(200)
+      .json({ message: "Course retrieved successfully.", data: course });
+  } catch (error) {
+    console.error("Error Retrieves a single course by its ID:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
+/**
+ * Retrieves statistics about all courses
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+async function getCourseStats(req, res) {
+  try {
+    console.log("DEBUG:");
+    const courses = await mongoService.findAll(getDb().collection("courses"));
+
+    if (courses.length === 0) {
+      res.status(404).json({ error: "No courses found." });
+      return;
+    }
+
+    const stats = {
+      totalCourses: courses.length,
+      averageDuration:
+        courses.reduce((sum, course) => {
+          const durationInWeeks = parseInt(course.duration) || 0;
+          return sum + durationInWeeks;
+        }, 0) / courses.length,
+    };
+
+    res.status(200).json({
+      message: "Course statistics retrieved successfully.",
+      data: stats,
+    });
+  } catch (error) {
+    console.error("Error retrieving course statistics:", error);
+    res.status(500).json({ error: "Internal Server Error." });
+  }
+}
+
+/**
+ * Retrieves a all courses
+ *
+ * @param {express.Request} req
+ * @param {express.Response} res
+ */
+async function getAllCourses(req, res) {
+  try {
+    const courses = await mongoService.findAll(getDb().collection("courses"));
+
+    if (courses.length == 0) {
+      res.status(404).json({ message: "No courses found." });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Courses retrieved successfully.",
+      count: courses.length,
+      data: courses,
+    });
+  } catch (error) {
+    console.error("Error retrieving courses:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 }
 
 // Export des contrôleurs
 module.exports = {
-  // TODO: Exporter les fonctions du contrôleur
+  createCourse,
+  getCourse,
+  getCourseStats,
+  getAllCourses,
 };
