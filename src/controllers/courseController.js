@@ -37,6 +37,12 @@ async function createCourse(req, res) {
       }
     );
 
+    await redisService.cacheData(
+      "courses:all",
+      await mongoService.findAll(getDb().collection("courses")),
+      3600
+    );
+
     res
       .status(201)
       .json({ message: "Course created successfully.", data: newCourse });
@@ -55,11 +61,22 @@ async function createCourse(req, res) {
 async function getCourse(req, res) {
   try {
     const { id } = req.params;
+
     if (!ObjectId.isValid(id)) {
       res.status(400).json({ error: "Invalid course ID." });
       return;
     }
-    console.log(`getCourse ${id}`);
+
+    const cachedCourse = await redisService.getCachedData(`course:${id}`);
+
+    if (cachedCourse) {
+      console.log(`Course ${id} retrieved from cache.`);
+      res.status(200).json({
+        message: "Course retrieved successfully.",
+        data: cachedCourse,
+      });
+      return;
+    }
 
     const course = await mongoService.findOneById(
       getDb().collection("courses"),
@@ -70,6 +87,8 @@ async function getCourse(req, res) {
       res.status(404).json({ error: "course not found" });
       return;
     }
+
+    await redisService.cacheData(`course:${id}`, course, 3600);
 
     res
       .status(200)
@@ -88,8 +107,21 @@ async function getCourse(req, res) {
  */
 async function getCourseStats(req, res) {
   try {
-    console.log("DEBUG:");
-    const courses = await mongoService.findAll(getDb().collection("courses"));
+    const cachedCourses = await redisService.getCachedData("courses:all");
+
+    let courses;
+
+    if (cachedCourses) {
+      console.log("Course stats retrieved from cache.");
+      courses = cachedCourses;
+    } else {
+      courses = await mongoService.findAll(getDb().collection("courses"));
+      await redisService.cacheData(
+        "courses:all",
+        courses,
+        3600
+      );
+    }
 
     if (courses.length === 0) {
       res.status(404).json({ error: "No courses found." });
@@ -123,7 +155,22 @@ async function getCourseStats(req, res) {
  */
 async function getAllCourses(req, res) {
   try {
-    const courses = await mongoService.findAll(getDb().collection("courses"));
+    const cachedCourses = await redisService.getCachedData(
+      "courses:all"
+    );
+
+    let courses;
+    if (cachedCourses) {
+      console.log("Courses retrieved from cache.");
+      courses = cachedCourses;
+    } else {
+      courses = await mongoService.findAll(getDb().collection("courses"));
+      await redisService.cacheData(
+        "courses:all",
+        courses,
+        3600
+      );
+    }
 
     if (courses.length == 0) {
       res.status(404).json({ message: "No courses found." });
