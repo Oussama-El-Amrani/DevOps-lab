@@ -49,13 +49,62 @@ function getDb() {
 
   return db;
 }
-
+/**
+ * Connects to the Redis server and establishes a persistent connection.
+ *
+ * @async
+ * @returns {Promise<ReturnType<require("redis").createClient>>} Redis client instance.
+ * @throws {Error} Throws an error if connection fails.
+ */
 async function connectRedis() {
-  // TODO: Implémenter la connexion Redis
-  // Gérer les erreurs et les retries
+  try {
+    redisClient = redis.createClient({ url: config.redis.uri });
+
+    await redisClient.connect();
+    await redisClient.ping();
+
+    console.log("✅ Redis Connected");
+  } catch (error) {
+    console.error("❌ Error:", error);
+  }
+}
+
+/**
+ * Retrieves the Redis client instance.
+ *
+ * @function
+ * @returns {ReturnType<require("redis").createClient>} The connected Redis client instance.
+ * @throws {Error} Throws an error if Redis is not connected yet.
+ */
+function getRedisClient() {
+  if (!redisClient)
+    throw new Error("Redis not connected yet. call connectRedis first");
+
+  return redisClient;
+}
+
+/**
+ * Closes the Redis connection .
+ *
+ * @async
+ * @returns {Promise<void>} Resolves when the Redis connection is successfully closed.
+ * @throws {Error} Throws an error if closing the Redis connection fails.
+ */
+async function closeRedis() {
+  try {
+    if (redisClient) await redisClient.quit();
+    console.log("Redis connection closed");
+  } catch (error) {
+    console.error("Error closing Redis connection", error);
+  }
 }
 
 // Export des fonctions et clients
 module.exports = {
-  // TODO: Exporter les clients et fonctions utiles
+  getDb,
+  connectMongo,
+  closeMongo,
+  connectRedis,
+  getRedisClient,
+  closeRedis,
 };
