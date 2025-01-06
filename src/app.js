@@ -7,19 +7,21 @@ const db = require("./config/db");
 
 const courseRoutes = require("./routes/courseRoutes");
 const studentRoutes = require("./routes/studentRoutes");
+const requestTimer = require("./middlewares/requestTimer");
 
 const app = express();
 
+app.use(requestTimer);
+app.use(express.json());
+
+app.use("/api/courses", courseRoutes);
+app.use("/api/students", studentRoutes);
 async function startServer() {
   try {
     console.log("start server");
 
     await db.connectMongo();
-
-    app.use(express.json());
-
-    app.use("/api/courses", courseRoutes);
-    app.use("/api/students", studentRoutes);
+    await db.connectRedis();
 
     app.listen(config.port, () => {
       console.log(`listening on port ${config.port}`);
@@ -33,8 +35,18 @@ async function startServer() {
 // Gestion propre de l'arrêt
 process.on("SIGTERM", async () => {
   console.log("SIGINT received, shutting down gracefully...");
-  await db.closeMongo();
-  process.exit(0);
+  try {
+    await db.closeMongo();
+    console.log("MongoDB connection closed.");
+
+    await db.closeRedis();
+    console.log("Redis connection closed.");
+
+    process.exit(0);
+  } catch (error) {
+    console.error("Error during shutdown:", error);
+    process.exit(1);
+  }
 });
 
 startServer();
