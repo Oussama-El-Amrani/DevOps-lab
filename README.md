@@ -1,10 +1,11 @@
+
 # Projet de fin de module NoSQL
 
 La procédure pour entamer ce projet consiste à analyser différentes parties de celui-ci.
 
 ## Configuration du projet
 
-Le projet possède deux configurations principales pour la base de données : MongoDB et Redis. Les services sont principalement utilisés dans le contrôleur, et les routes doivent être définies comme suit :
+Le projet possède deux configurations principales pour la base de données : MongoDB et Redis. Les services sont principalement utilisés dans le contrôleur, et les routes sont définies comme suit :
 
 ### Endpoints des routes
 
@@ -21,52 +22,52 @@ Le projet possède deux configurations principales pour la base de données : Mo
 
 ---
 
-### cURL Commands for Testing Endpoints
+### cURL Commands pour tester les Endpoints
 
-#### 1. **Create a New Course**
+#### 1. **Créer un nouveau cours**
 
-To create a new course, use the following `POST` request:
+Pour créer un nouveau cours, utilisez la requête `POST` suivante :
 
 ```bash
 curl -X POST http://localhost:3000/api/courses \
   -H "Content-Type: application/json" \
   -d '{
         "title": "Introduction to Docker",
-        "description": "Learn how to containerize applications using Docker and improve your development workflow",
+        "description": "Apprenez à containeriser des applications avec Docker et améliorez votre flux de travail",
         "instructor": "Alex Johnson",
-        "duration": "4 weeks"
+        "duration": "4 semaines"
       }'
 ```
 
-#### 2. **Create Another Course**
+#### 2. **Créer un autre cours**
 
 ```bash
 curl -X POST http://localhost:3000/api/courses \
   -H "Content-Type: application/json" \
   -d '{
-        "title": "Continuous Integration with Jenkins",
-        "description": "Master the principles of CI/CD and automate testing and deployments using Jenkins",
+        "title": "Intégration Continue avec Jenkins",
+        "description": "Maîtrisez les principes du CI/CD et automatisez les tests et déploiements avec Jenkins",
         "instructor": "Sarah Lee",
-        "duration": "6 weeks"
+        "duration": "6 semaines"
       }'
 ```
 
-#### 3. **Create Another Course**
+#### 3. **Créer encore un autre cours**
 
 ```bash
 curl -X POST http://localhost:3000/api/courses \
   -H "Content-Type: application/json" \
   -d '{
-        "title": "Kubernetes for Production Environments",
-        "description": "Learn how to manage and scale containerized applications in production using Kubernetes",
+        "title": "Kubernetes pour les environnements de production",
+        "description": "Apprenez à gérer et mettre à l'échelle des applications containerisées en production avec Kubernetes",
         "instructor": "Daniel Green",
-        "duration": "8 weeks"
+        "duration": "8 semaines"
       }'
 ```
 
-#### 4. **Create a New Student**
+#### 4. **Créer un nouvel étudiant**
 
-To create a new student, use the following `POST` request:
+Pour créer un nouvel étudiant, utilisez la requête `POST` suivante :
 
 ```bash
 curl -X POST http://localhost:3000/api/students \
@@ -79,27 +80,40 @@ curl -X POST http://localhost:3000/api/students \
       }'
 ```
 
-#### 5. **Retrieve All Students**
+#### 5. **Récupérer tous les étudiants**
 
-To retrieve all students, use the following `GET` request:
-
-```bash
-curl -X GET http://localhost:3000/api/students
-```
-
-#### 6. **Retrieve All Students Again**
+Pour récupérer tous les étudiants, utilisez la requête `GET` suivante :
 
 ```bash
 curl -X GET http://localhost:3000/api/students
 ```
 
-#### 7. **Retrieve a Specific Student by ID**
+#### 6. **Récupérer un étudiant spécifique par ID**
 
-To retrieve a student by their ID, use the following `GET` request with the student's ID (e.g., `677ae2218dd6c55b4765b4b6`):
+Pour récupérer un étudiant par son ID, utilisez la requête `GET` suivante avec l'ID de l'étudiant (par exemple, `677ae2218dd6c55b4765b4b6`) :
 
 ```bash
 curl -X GET http://localhost:3000/api/students/677ae2218dd6c55b4765b4b6
 ```
+
+#### 7. **Récupérer les statistiques des cours**
+
+Pour récupérer les statistiques des cours, utilisez la requête `GET` suivante :
+
+```bash
+curl -X GET http://localhost:3000/api/courses/stats
+```
+
+Cette requête retournera des informations comme le nombre total de cours et la durée moyenne des cours.
+
+## Documentation Swagger et UI
+
+L'API est également documentée via Swagger pour faciliter la compréhension et l'utilisation. Vous pouvez tester les endpoints directement via l'interface Swagger UI en accédant à :
+
+- **URL Swagger UI**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+
+Cette interface vous permettra de voir tous les endpoints, de tester les différentes routes avec des exemples et de recevoir des retours détaillés sur les réponses de l'API.
+![alt text](./public/screenshots/swagger-ui.png)
 
 ---
 

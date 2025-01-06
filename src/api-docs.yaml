@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Learning Platform API
+  version: 1.0.0
+  description: API documentation for managing courses and students in the learning platform.
+paths:
+  /api/courses:
+    post:
+      summary: Create a new course
+      description: Creates a new course.
+      operationId: createCourse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                instructor:
+                  type: string
+                duration:
+                  type: string
+              required:
+                - title
+                - description
+                - instructor
+                - duration
+      responses:
+        "201":
+          description: Course created successfully
+        "400":
+          description: Missing required fields
+        "500":
+          description: Internal Server Error
+    get:
+      summary: Retrieve all courses
+      description: Retrieves all courses from the database.
+      operationId: getAllCourses
+      responses:
+        "200":
+          description: List of all courses
+        "404":
+          description: No courses found
+        "500":
+          description: Internal Server Error
+  /api/courses/{id}:
+    get:
+      summary: Retrieve a course by ID
+      description: Retrieves a specific course by its ID.
+      operationId: getCourse
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the course.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Course retrieved successfully
+        "400":
+          description: Invalid course ID
+        "404":
+          description: Course not found
+        "500":
+          description: Internal Server Error
+  /api/courses/stats:
+    get:
+      summary: Retrieve course statistics
+      description: Retrieves statistics about all courses such as total courses and average duration.
+      operationId: getCourseStats
+      responses:
+        "200":
+          description: Course statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCourses:
+                    type: integer
+                  averageDuration:
+                    type: number
+                    format: float
+        "404":
+          description: No courses found
+        "500":
+          description: Internal Server Error
+  /api/students:
+    post:
+      summary: Create a new student
+      description: Creates a new student.
+      operationId: createStudent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                phoneNumber:
+                  type: string
+              required:
+                - firstName
+                - lastName
+                - email
+                - phoneNumber
+      responses:
+        "201":
+          description: Student created successfully
+        "400":
+          description: Missing required fields
+        "500":
+          description: Internal Server Error
+    get:
+      summary: Retrieve all students
+      description: Retrieves all students from the database.
+      operationId: getAllStudents
+      responses:
+        "200":
+          description: List of all students
+        "404":
+          description: No students found
+        "500":
+          description: Internal Server Error
+  /api/students/{id}:
+    get:
+      summary: Retrieve a student by ID
+      description: Retrieves a specific student by their ID.
+      operationId: getStudent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the student.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Student retrieved successfully
+        "400":
+          description: Invalid student ID
+        "404":
+          description: Student not found
+        "500":
+          description: Internal Server Error
