@@ -1,38 +1,73 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: learning-platform-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - cache
+    networks:
+      - private
+      - public
+    environment:
+      - MONGODB_URI=mongodb://admin:password@mongodb-instance:27017
+      - MONGODB_DB_NAME=learning_platform
+      - REDIS_URI=redis://redis-instance:6379
+      - PORT=3000
+    restart: unless-stopped
+
+  # MongoDB service
   db:
     image: mongodb/mongodb-community-server:6.0.3-ubi8
-    container_name: mongodb
+    container_name: mongodb-instance
     ports:
-      - 27017:27017
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - private  
     restart: unless-stopped
 
-  mongo-express:
-    image: mongo-express:latest
-    restart: always
-    ports:
-      - "8081:8081"
-    environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
-      - ME_CONFIG_MONGODB_SERVER=mongodb
-    depends_on:
-      - db
-
+  # Redis service
   cache:
     image: redis:7.4-rc2-alpine
-    container_name: redis
+    container_name: redis-instance
     ports:
       - "6379:6379"
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - private
+    restart: unless-stopped
+
+  # RedisInsight service
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5555:5540"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+    # TODO: should be change that
+      - private
+      - public
+    restart: unless-stopped
 
 volumes:
   mongodb_data:
     name: mongodb_data
     driver: local
+
+networks:
+  public:
+  private:
+    internal: true
