@@ -13,10 +13,10 @@ services:
       - private
       - public
     environment:
-      - MONGODB_URI=mongodb://admin:password@mongodb-instance:27017
-      - MONGODB_DB_NAME=learning_platform
-      - REDIS_URI=redis://redis-instance:6379
-      - PORT=3000
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - REDIS_URI=${REDIS_URI}
+      - PORT=${PORT}
     restart: unless-stopped
 
   # MongoDB service
@@ -27,11 +27,11 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
+    environment: 
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     networks:
-      - private  
+      - private
     restart: unless-stopped
 
   # Redis service
@@ -54,10 +54,10 @@ services:
     ports:
       - "5555:5540"
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - REDIS_HOST={redis}
+      - REDIS_PORT=${REDIS_PORT}
     networks:
-    # TODO: should be change that
+      # TODO: should be change that
       - private
       - public
     restart: unless-stopped
