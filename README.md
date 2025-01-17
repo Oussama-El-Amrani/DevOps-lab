@@ -2,6 +2,44 @@
 
 La procédure pour entamer ce projet consiste à analyser différentes parties de celui-ci.
 
+## Comment utiliser ce projet
+
+### Prérequis
+
+Ce projet nécessite uniquement **Docker** pour fonctionner.
+
+### Étapes pour démarrer
+
+1. **Clonez ce projet**
+   Clonez le dépôt Git sur votre machine locale :
+
+   ```bash
+   git clone https://github.com/Oussama-El-Amrani/learning-platform-nosql.git
+   ```
+
+2. **Lancer l'application avec Docker Compose**
+
+   Il suffit d'exécuter la commande suivante pour démarrer tous les services nécessaires (MongoDB, Redis, l'application et RedisInsight) :
+
+   ```bash
+   docker-compose up --build
+   ```
+
+   Cette commande construira les images Docker et démarrera les services définis dans le fichier `docker-compose.yml`.
+
+3. **Accéder à l'application**
+
+   Une fois les services démarrés, l'API sera accessible à l'adresse suivante : 
+
+   ```
+   http://localhost:3000
+   ```
+
+   Vous pouvez également accéder à l'interface RedisInsight pour gérer Redis via : 
+
+   ```
+   http://localhost:5555
+   ```
 ## Configuration du projet
 
 Le projet possède deux configurations principales pour la base de données : MongoDB et Redis. Les services sont principalement utilisés dans le contrôleur, et les routes sont définies comme suit :
@@ -114,6 +152,9 @@ L'API est également documentée via Swagger pour faciliter la compréhension et
 Cette interface vous permettra de voir tous les endpoints, de tester les différentes routes avec des exemples et de recevoir des retours détaillés sur les réponses de l'API.
 ![alt text](./public/screenshots/swagger-ui.png)
 
+**Créer un nouveau cours**
+![add new course step 1](./public/screenshots/swagger-ui-add-new-course-1.png)
+![add new course step 2](./public/screenshots/swagger-ui-add-new-course-2.png)
 ---
 
 ## Questions sur les Routes (courseRoutes.js)
