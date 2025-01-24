@@ -17,7 +17,35 @@ services:
       - MONGODB_DB_NAME=${MONGODB_DB_NAME}
       - REDIS_URI=${REDIS_URI}
       - PORT=${PORT}
+    profiles:
+      - prod
     restart: unless-stopped
+
+  app-dev:
+      build:
+        context: .
+        dockerfile: Dockerfile.dev
+      container_name: learning-platform-api-dev
+      ports:
+        - "3000:3000"
+      depends_on:
+        - db
+        - cache
+      networks:
+        - private
+        - public
+      environment:
+        - MONGODB_URI=${MONGODB_URI}
+        - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+        - REDIS_URI=${REDIS_URI}
+        - PORT=${PORT}
+        - NODE_ENV=development
+      volumes:
+        - .:/app               # Mount host code
+        - node_modules:/app/node_modules  # Preserve container modules
+      profiles:
+        - dev
+      restart: unless-stopped
 
   # MongoDB service
   db:
@@ -27,11 +55,14 @@ services:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-    environment: 
+    environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     networks:
       - private
+    profiles:
+      - dev
+      - prod
     restart: unless-stopped
 
   # Redis service
@@ -45,6 +76,9 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     networks:
       - private
+    profiles:
+      - dev
+      - prod
     restart: unless-stopped
 
   # RedisInsight service
@@ -59,13 +93,16 @@ services:
     networks:
       # TODO: should be change that
       - private
-      - public
+      # - public
+    profiles:
+      - dev
     restart: unless-stopped
 
 volumes:
   mongodb_data:
     name: mongodb_data
     driver: local
+  node_modules:
 
 networks:
   public:
