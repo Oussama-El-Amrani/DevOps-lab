@@ -41,4 +41,5 @@ USER appuser
 ENV NODE_ENV=production
 
 # Run the Node.js application when the container starts using npm start
-CMD ["node", "./src/app.js"]
+CMD ["npm", "run", "start:all"]
+

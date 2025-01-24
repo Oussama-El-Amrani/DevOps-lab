@@ -93,7 +93,7 @@ services:
     networks:
       # TODO: should be change that
       - private
-      # - public
+      - public
     profiles:
       - dev
     restart: unless-stopped

@@ -3,8 +3,7 @@
 // Question: Quelles sont les bonnes pratiques pour les clés Redis ?
 // Réponse :
 const { getRedisClient } = require("../config/db");
-
-// Fonctions utilitaires pour Redis
+const mongoService = require("./mongoService");
 /**
  * Caches data in Redis with a specified time-to-live (TTL).
  *
@@ -57,7 +56,39 @@ async function getCachedData(key) {
   }
 }
 
+async function publishCacheUpdateEvent(key) {
+  try {
+    await getRedisClient().publish("cache:update", key);
+    console.log(`Published cache update for key: ${key}`);
+  } catch (error) {
+    console.error(`Error publishing event for key ${key}:`, error);
+    throw error;
+  }
+}
+
+function subscribeToCacheUpdates() {
+  const subscriber = getRedisClient().duplicate();
+  subscriber.subscribe("cache:update", (err) => {
+    if (err) throw err;
+    console.log("Subscribed to cache updates");
+  });
+
+  subscriber.on("message", async (channel, key) => {
+    if (channel === "cache:update") {
+      console.log(`Updating cache for key: ${key}`);
+      try {
+        const data = await mongoService.findAll(getDb().collection("courses"));
+        await cacheData(key, data, 3600);
+      } catch (error) {
+        console.error(`Cache update failed for ${key}:`, error);
+      }
+    }
+  });
+}
+
 module.exports = {
   cacheData,
   getCachedData,
+  publishCacheUpdateEvent,
+  subscribeToCacheUpdates
 };
