@@ -86,9 +86,72 @@ function subscribeToCacheUpdates() {
   });
 }
 
+/**
+ * Caches a document in Redis Hash structure
+ * @param {string} collectionName - Name of the collection (e.g., 'students', 'courses')
+ * @param {string} documentId - Unique identifier for the document
+ * @param {Object} documentData - Document data to store
+ * @param {number} ttl - Time-to-live in seconds (default: 1 hour)
+ */
+async function cacheHashDocument(
+  collectionName,
+  documentId,
+  documentData,
+  ttl = 3600
+) {
+  try {
+    const key = `${collectionName}:hash`;
+    await getRedisClient()
+      .multi()
+      .hSet(key, documentId, JSON.stringify(documentData))
+      .expire(key, ttl)
+      .exec();
+  } catch (error) {
+    console.error(`Error caching ${collectionName} hash:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves a single document from Redis Hash
+ * @param {string} collectionName - Name of the collection
+ * @param {string} documentId - ID of the document to retrieve
+ */
+async function getHashDocument(collectionName, documentId) {
+  try {
+    const key = `${collectionName}:hash`;
+    const data = await getRedisClient().hGet(key, documentId);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error(`Error getting ${collectionName} hash document:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieves all documents from a Redis Hash collection
+ * @param {string} collectionName - Name of the collection
+ */
+async function getAllHashDocuments(collectionName) {
+  try {
+    const key = `${collectionName}:hash`;
+    const data = await getRedisClient().hGetAll(key);
+    return Object.entries(data).map(([id, value]) => ({
+      _id: id,
+      ...JSON.parse(value),
+    }));
+  } catch (error) {
+    console.error(`Error getting all ${collectionName} hash documents:`, error);
+    throw error;
+  }
+}
+
 module.exports = {
   cacheData,
   getCachedData,
   publishCacheUpdateEvent,
-  subscribeToCacheUpdates
+  subscribeToCacheUpdates,
+  cacheHashDocument,
+  getAllHashDocuments,
+  getHashDocument,
 };
