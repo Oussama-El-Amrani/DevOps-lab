@@ -22,30 +22,30 @@ services:
     restart: unless-stopped
 
   app-dev:
-      build:
-        context: .
-        dockerfile: Dockerfile.dev
-      container_name: learning-platform-api-dev
-      ports:
-        - "3000:3000"
-      depends_on:
-        - db
-        - cache
-      networks:
-        - private
-        - public
-      environment:
-        - MONGODB_URI=${MONGODB_URI}
-        - MONGODB_DB_NAME=${MONGODB_DB_NAME}
-        - REDIS_URI=${REDIS_URI}
-        - PORT=${PORT}
-        - NODE_ENV=development
-      volumes:
-        - .:/app               # Mount host code
-        - node_modules:/app/node_modules  # Preserve container modules
-      profiles:
-        - dev
-      restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: learning-platform-api-dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - cache
+    networks:
+      - private
+      - public
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - REDIS_URI=${REDIS_URI}
+      - PORT=${PORT}
+      - NODE_ENV=development
+    volumes:
+      - .:/app # Mount host code
+      - node_modules:/app/node_modules # Preserve container modules
+    profiles:
+      - dev
+    restart: unless-stopped
 
   # MongoDB service
   db:
@@ -98,11 +98,103 @@ services:
       - dev
     restart: unless-stopped
 
+  # Monitoring system
+  prometheus:
+    image: docker.io/prom/prometheus:v3.1.0
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    command: "--config.file=/etc/prometheus/prometheus.yaml"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    networks:
+    # TODO: this should be never accessible in the public network
+      - private
+      - public
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+  grafana:
+    image: docker.io/grafana/grafana-oss:11.4.0
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+    # TODO: this should be never accessible in the public network
+      - private
+      - public
+    profiles:
+      - dev
+      - prod   
+    restart: unless-stopped
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    container_name: node_exporter
+    command: "--path.rootfs=/host"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+    # TODO: this should be never accessible in the public network
+      - private
+      - public
+    profiles:
+      - dev
+      - prod
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /run:/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+    # TODO: this should be never accessible in the public network
+      - private
+      - public
+    profiles:
+      - dev
+      - prod  
+    devices:
+      - /dev/kmsg
+    privileged: true
+    restart: unless-stopped
+ 
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: redis_exporter
+    environment:
+      - REDIS_ADDR=redis://cache:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
 volumes:
   mongodb_data:
     name: mongodb_data
     driver: local
   node_modules:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
 
 networks:
   public:
