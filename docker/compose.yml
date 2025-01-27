@@ -1,8 +1,8 @@
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/app/Dockerfile
     container_name: learning-platform-api
     ports:
       - "3000:3000"
@@ -17,14 +17,15 @@ services:
       - MONGODB_DB_NAME=${MONGODB_DB_NAME}
       - REDIS_URI=${REDIS_URI}
       - PORT=${PORT}
+      - NODE_ENV=production
     profiles:
       - prod
     restart: unless-stopped
 
   app-dev:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/app/Dockerfile.dev
     container_name: learning-platform-api-dev
     ports:
       - "3000:3000"
@@ -41,7 +42,7 @@ services:
       - PORT=${PORT}
       - NODE_ENV=development
     volumes:
-      - .:/app # Mount host code
+      - ../:/app # Mount host code
       - node_modules:/app/node_modules # Preserve container modules
     profiles:
       - dev
@@ -73,7 +74,7 @@ services:
       - "6379:6379"
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     volumes:
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     networks:
       - private
     profiles:
@@ -106,7 +107,7 @@ services:
       - 9090:9090
     command: "--config.file=/etc/prometheus/prometheus.yaml"
     volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
       - prometheus-data:/prometheus
     networks:
     # TODO: this should be never accessible in the public network
@@ -124,9 +125,9 @@ services:
       - "3001:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning
-      - ./config/grafana/dashboards:/etc/grafana/dashboards
-      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     networks:
     # TODO: this should be never accessible in the public network
       - private
