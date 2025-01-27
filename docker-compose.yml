@@ -106,7 +106,7 @@ services:
       - 9090:9090
     command: "--config.file=/etc/prometheus/prometheus.yaml"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
       - prometheus-data:/prometheus
     networks:
     # TODO: this should be never accessible in the public network
@@ -124,10 +124,16 @@ services:
       - "3001:3000"
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/dashboards:/etc/grafana/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
     networks:
     # TODO: this should be never accessible in the public network
       - private
       - public
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
     profiles:
       - dev
       - prod   
