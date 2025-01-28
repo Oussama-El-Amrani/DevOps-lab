@@ -11,7 +11,6 @@ services:
       - cache
     networks:
       - private
-      - public
     environment:
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_DB_NAME=${MONGODB_DB_NAME}
@@ -34,6 +33,7 @@ services:
       - cache
     networks:
       - private
+    # for testing purpose
       - public
     environment:
       - MONGODB_URI=${MONGODB_URI}
@@ -92,7 +92,7 @@ services:
       - REDIS_HOST={redis}
       - REDIS_PORT=${REDIS_PORT}
     networks:
-      # TODO: should be change that
+      # we don't have any problem here this can be run just in dev profile
       - private
       - public
     profiles:
@@ -110,9 +110,7 @@ services:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
       - prometheus-data:/prometheus
     networks:
-    # TODO: this should be never accessible in the public network
       - private
-      - public
     profiles:
       - dev
       - prod
@@ -129,7 +127,6 @@ services:
       - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
       - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
     networks:
-    # TODO: this should be never accessible in the public network
       - private
       - public
     environment:
@@ -149,9 +146,7 @@ services:
     volumes:
       - /:/host:ro,rslave
     networks:
-    # TODO: this should be never accessible in the public network
       - private
-      - public
     profiles:
       - dev
       - prod
@@ -168,9 +163,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
     networks:
-    # TODO: this should be never accessible in the public network
       - private
-      - public
     profiles:
       - dev
       - prod  
