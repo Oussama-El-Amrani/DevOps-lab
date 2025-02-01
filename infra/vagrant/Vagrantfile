@@ -1,0 +1,53 @@
+# Service configuration reference
+SERVICES = {
+  'database' => {
+    ip: '192.168.56.10',
+    ports: { 27017 => 27017 }
+  },
+  'cache' => {
+    ip: '192.168.56.11',
+    ports: { 6379 => 6379 }
+  },
+  'backend' => {
+    ip: '192.168.56.12',
+    ports: { 3000 => 3000 }
+  },
+  'monitoring' => {
+    ip: '192.168.56.12',
+    ports: { 3001 => 3001 }
+  }
+}
+
+Vagrant.configure("2") do |config|
+  # Common configuration
+  config.vm.box = "hashicorp-education/ubuntu-24-04"
+  config.vm.box_version = "0.1.0"
+
+  # Database Server
+  config.vm.define "database" do |database|
+    database.vm.hostname = "database"
+    database.vm.network "private_network", ip: SERVICES['database'][:ip]
+    database.vm.network "forwarded_port", guest: 27017, host: 27017
+  end
+
+  # Cache Server
+  config.vm.define "cache" do |cache|
+    cache.vm.hostname = "cache"
+    cache.vm.network "private_network", ip: SERVICES['cache'][:ip]
+    cache.vm.network "forwarded_port", guest: 6379, host: 6379
+  end  
+
+  # Backend Server
+  config.vm.define "backend" do |backend|
+    backend.vm.hostname = "backend"
+    backend.vm.network "private_network", ip: SERVICES['backend'][:ip]
+    backend.vm.network "forwarded_port", guest: 3000, host: 3000
+  end
+
+  # Monitoring Server
+  config.vm.define "monitoring" do |monitoring|
+    monitoring.vm.hostname = "monitoring"
+    monitoring.vm.network "private_network", ip: SERVICES['monitoring'][:ip]
+    monitoring.vm.network "forwarded_port", guest: 3001, host: 3001
+  end  
+end
