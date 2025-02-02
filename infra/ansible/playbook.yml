@@ -1,0 +1,23 @@
+- name: Installation of databases
+  hosts: database
+  remote_user: vagrant
+  tasks:
+    - import_tasks: common_install.yml
+
+- name: Installation of cache
+  hosts: cache
+  remote_user: vagrant
+  tasks:
+    - import_tasks: common_install.yml
+
+- name: Installation of backend
+  hosts: backend
+  remote_user: vagrant
+  tasks:
+    - import_tasks: common_install.yml
+
+- name: Installation of monitoring
+  hosts: monitoring
+  remote_user: vagrant
+  tasks:
+    - import_tasks: common_install.yml
