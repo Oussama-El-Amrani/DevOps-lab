@@ -64,35 +64,32 @@
         name: redis-server
         state: restarted
 
-- name: Installation of backend
+- name: Pull and run Docker image on backend
   hosts: backend
   remote_user: vagrant
   become: true
   vars:
     registry_ip: "192.168.56.14"
+    image_name: "learning-platform-api"
+    image_tag: "latest"
+    container_name: "learning-platform-api"
   tasks:
     - import_tasks: common_install.yml
     - import_tasks: docker_install.yml
 
-    - name: Create Docker daemon.json
-      copy:
-        dest: /etc/docker/daemon.json
-        content: |
-          {
-            "insecure-registries": ["{{ registry_ip }}:5000"]
-          }
-      notify: Restart Docker
+    - name: Pull Docker image from private registry
+      shell: docker pull {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
+      register: pull_output
+      changed_when: "'Downloaded newer image' in pull_output.stdout or pull_output.rc == 0"
+      no_log: false
 
-    - name: Create or update /etc/hosts entry
-      lineinfile:
-        path: /etc/hosts
-        line: "{{ registry_ip }} registry"
-        state: present
-  handlers:
-    - name: Restart Docker
-      service:
-        name: docker
-        state: restarted
+    - name: Display pull output
+      debug:
+        var: pull_output.stdout_lines
+
+    - name: Remove existing container if running
+      shell: docker rm -f {{ container_name }}
+      ignore_errors: yes
 
 - name: Build and push Docker image on monitoring VM
   hosts: monitoring
@@ -101,7 +98,7 @@
   vars:
     registry_ip: "192.168.56.14"
     image_name: "learning-platform-api"
-    image_tag: "tatest"
+    image_tag: "latest"
     project_dir: "/home/vagrant/learning-platform-nosql"
   tasks:
     - name: Configure Docker daemon.json for insecure registry on monitoring
