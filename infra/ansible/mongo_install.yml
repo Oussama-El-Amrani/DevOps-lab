@@ -1,0 +1,25 @@
+- name: Add MongoDB GPG Key
+  apt_key:
+    url: https://pgp.mongodb.com/server-7.0.asc
+    state: present
+
+- name: Add MongoDB Repository
+  apt_repository:
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/7.0 multiverse"
+    state: present
+    filename: mongodb-org
+
+- name: Update APT Cache
+  apt:
+    update_cache: yes
+
+- name: Install MongoDB
+  apt:
+    name: mongodb-org
+    state: latest
+
+- name: Ensure MongoDB is started
+  service:
+    name: mongod
+    state: started
+    enabled: yes

@@ -34,3 +34,9 @@ LICENSE
 README.md
 docker/
 public/
+/proc
+/sys
+/dev
+.git
+node_modules
+npm-debug.log
