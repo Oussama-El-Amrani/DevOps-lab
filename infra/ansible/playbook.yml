@@ -1,3 +1,30 @@
+- name: Installation of registry
+  hosts: registry
+  remote_user: vagrant
+  become: true
+  tasks:
+    - import_tasks: common_install.yml
+    - import_tasks: docker_install.yml
+
+    - name: Create registry data directory
+      ansible.builtin.file:
+        path: /var/lib/registry
+        state: directory
+        mode: "0755"
+
+    - name: Run Docker Registry
+      community.docker.docker_container:
+        name: registry
+        image: registry:2
+        ports:
+          - "5000:5000"
+        volumes:
+          - /var/lib/registry:/var/lib/registry
+        restart_policy: always
+        env:
+          REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
+          REGISTRY_STORAGE_DELETE_ENABLED: "true"
+
 - name: Installation of databases
   hosts: database
   remote_user: vagrant
@@ -67,35 +94,51 @@
         name: docker
         state: restarted
 
-- name: Installation of monitoring
+- name: Build and push Docker image on monitoring VM
   hosts: monitoring
   remote_user: vagrant
-  tasks:
-    - import_tasks: common_install.yml
-
-- name: Installation of registry
-  hosts: registry
-  remote_user: vagrant
   become: true
+  vars:
+    registry_ip: "192.168.56.14"
+    image_name: "learning-platform-api"
+    image_tag: "tatest"
+    project_dir: "/home/vagrant/learning-platform-nosql"
   tasks:
-    - import_tasks: common_install.yml
-    - import_tasks: docker_install.yml
+    - name: Configure Docker daemon.json for insecure registry on monitoring
+      copy:
+        dest: /etc/docker/daemon.json
+        content: |
+          {
+            "insecure-registries": ["{{ registry_ip }}:5000"]
+          }
+      notify: Restart Docker
 
-    - name: Create registry data directory
-      ansible.builtin.file:
-        path: /var/lib/registry
-        state: directory
-        mode: "0755"
+    - name: Flush handlers to restart Docker immediately
+      meta: flush_handlers
 
-    - name: Run Docker Registry
-      community.docker.docker_container:
-        name: registry
-        image: registry:2
-        ports:
-          - "5000:5000"
-        volumes:
-          - /var/lib/registry:/var/lib/registry
-        restart_policy: always
-        env:
-          REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
-          REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    - name: Build Docker image
+      shell: >
+        docker build -t {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }} -f {{ project_dir }}/docker/app/Dockerfile {{ project_dir }}
+      register: build_output
+      changed_when: "'Successfully built' in build_output.stdout or build_output.rc == 0"
+      no_log: false
+
+    - name: Display build output
+      debug:
+        var: build_output.stdout_lines
+
+    - name: Push Docker image to registry
+      shell: docker push {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
+      register: push_output
+      changed_when: "'pushed' in push_output.stdout or push_output.rc == 0"
+      no_log: false
+
+    - name: Display push output
+      debug:
+        var: push_output.stdout_lines
+
+  handlers:
+    - name: Restart Docker
+      service:
+        name: docker
+        state: restarted
