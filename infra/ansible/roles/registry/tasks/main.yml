@@ -1,0 +1,18 @@
+- name: Create registry data directory
+  ansible.builtin.file:
+    path: /var/lib/registry
+    state: directory
+    mode: "0755"
+
+- name: Run Docker Registry
+  community.docker.docker_container:
+    name: registry
+    image: registry:2
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/lib/registry:/var/lib/registry
+    restart_policy: always
+    env:
+      REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"

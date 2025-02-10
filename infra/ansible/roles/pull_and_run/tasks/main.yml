@@ -1,0 +1,34 @@
+
+- name: Create /etc/docker/daemon.json if it does not exist
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "insecure-registries": ["{{ registry_ip }}:5000"]
+      }
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart Docker
+
+- name: Restart Docker service
+  systemd:
+    name: docker
+    state: restarted
+    enabled: yes
+  when: ansible_facts['distribution'] == 'Ubuntu'
+
+- name: Pull Docker image from private registry
+  shell: docker pull {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
+  register: pull_output
+  changed_when: "'Downloaded newer image' in pull_output.stdout or pull_output.rc == 0"
+  no_log: false
+
+- name: Display pull output
+  debug:
+    var: pull_output.stdout_lines
+
+- name: Remove existing container if running
+  shell: docker rm -f {{ container_name }}
+  ignore_errors: yes

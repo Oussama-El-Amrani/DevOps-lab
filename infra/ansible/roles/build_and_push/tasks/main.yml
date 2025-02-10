@@ -1,0 +1,32 @@
+- name: Configure Docker daemon.json for insecure registry
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "insecure-registries": ["{{ registry_ip }}:5000"]
+      }
+  notify: Restart Docker
+
+- name: Flush handlers to restart Docker immediately
+  meta: flush_handlers
+
+- name: Build Docker image
+  shell: >
+    docker build -t {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }} -f {{ project_dir }}/docker/app/Dockerfile {{ project_dir }}
+  register: build_output
+  changed_when: "'Successfully built' in build_output.stdout or build_output.rc == 0"
+  no_log: false
+
+- name: Display build output
+  debug:
+    var: build_output.stdout_lines
+
+- name: Push Docker image to registry
+  shell: docker push {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
+  register: push_output
+  changed_when: "'pushed' in push_output.stdout or push_output.rc == 0"
+  no_log: false
+
+- name: Display push output
+  debug:
+    var: push_output.stdout_lines

@@ -2,6 +2,3 @@
   service:
     name: redis-server
     state: restarted
-    
-- name: start mongodb
-  service: name=mongod state=started

@@ -1,95 +1,23 @@
+- name: Setup Infrastructure
+  hosts: all
+  remote_user: vagrant
+  become: true
+  roles:
+    - common
+
+- name: Docker Setup
+  hosts: registry, monitoring, backend
+  remote_user: vagrant
+  become: true
+  roles:
+    - docker
+
 - name: Installation of registry
   hosts: registry
   remote_user: vagrant
   become: true
-  tasks:
-    - import_tasks: common_install.yml
-    - import_tasks: docker_install.yml
-
-    - name: Create registry data directory
-      ansible.builtin.file:
-        path: /var/lib/registry
-        state: directory
-        mode: "0755"
-
-    - name: Run Docker Registry
-      community.docker.docker_container:
-        name: registry
-        image: registry:2
-        ports:
-          - "5000:5000"
-        volumes:
-          - /var/lib/registry:/var/lib/registry
-        restart_policy: always
-        env:
-          REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
-          REGISTRY_STORAGE_DELETE_ENABLED: "true"
-
-- name: Installation of databases
-  hosts: database
-  remote_user: vagrant
-  become: true
-  tasks:
-    - import_tasks: common_install.yml
-    - import_tasks: mongo_install.yml
-
-- name: Installation of cache
-  hosts: cache
-  remote_user: vagrant
-  become: true
-  tasks:
-    - import_tasks: common_install.yml
-    - name: Ensure Redis is present
-      apt:
-        pkg: redis-server
-        state: latest
-
-    - name: Ensure Redis is started
-      service:
-        name: redis-server
-        state: started
-        enabled: yes
-
-    - name: Ensure Redis Configuration
-      template:
-        src: redis.conf.j2
-        dest: /etc/redis/redis.conf
-        owner: root
-        group: root
-        mode: "0644"
-      notify: Redis Restart
-  handlers:
-    - name: Redis Restart
-      service:
-        name: redis-server
-        state: restarted
-
-- name: Pull and run Docker image on backend
-  hosts: backend
-  remote_user: vagrant
-  become: true
-  vars:
-    registry_ip: "192.168.56.14"
-    image_name: "learning-platform-api"
-    image_tag: "latest"
-    container_name: "learning-platform-api"
-  tasks:
-    - import_tasks: common_install.yml
-    - import_tasks: docker_install.yml
-
-    - name: Pull Docker image from private registry
-      shell: docker pull {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
-      register: pull_output
-      changed_when: "'Downloaded newer image' in pull_output.stdout or pull_output.rc == 0"
-      no_log: false
-
-    - name: Display pull output
-      debug:
-        var: pull_output.stdout_lines
-
-    - name: Remove existing container if running
-      shell: docker rm -f {{ container_name }}
-      ignore_errors: yes
+  roles:
+    - registry
 
 - name: Build and push Docker image on monitoring VM
   hosts: monitoring
@@ -100,42 +28,31 @@
     image_name: "learning-platform-api"
     image_tag: "latest"
     project_dir: "/home/vagrant/learning-platform-nosql"
-  tasks:
-    - name: Configure Docker daemon.json for insecure registry on monitoring
-      copy:
-        dest: /etc/docker/daemon.json
-        content: |
-          {
-            "insecure-registries": ["{{ registry_ip }}:5000"]
-          }
-      notify: Restart Docker
+  roles:
+    - build_and_push
 
-    - name: Flush handlers to restart Docker immediately
-      meta: flush_handlers
+- name: Installation of databases
+  hosts: database
+  remote_user: vagrant
+  become: true
+  roles:
+    - mongo
 
-    - name: Build Docker image
-      shell: >
-        docker build -t {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }} -f {{ project_dir }}/docker/app/Dockerfile {{ project_dir }}
-      register: build_output
-      changed_when: "'Successfully built' in build_output.stdout or build_output.rc == 0"
-      no_log: false
+- name: Installation of cache
+  hosts: cache
+  remote_user: vagrant
+  become: true
+  roles:
+    - redis
 
-    - name: Display build output
-      debug:
-        var: build_output.stdout_lines
-
-    - name: Push Docker image to registry
-      shell: docker push {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
-      register: push_output
-      changed_when: "'pushed' in push_output.stdout or push_output.rc == 0"
-      no_log: false
-
-    - name: Display push output
-      debug:
-        var: push_output.stdout_lines
-
-  handlers:
-    - name: Restart Docker
-      service:
-        name: docker
-        state: restarted
+- name: Pull and run Docker image on backend
+  hosts: backend
+  remote_user: vagrant
+  become: true
+  vars:
+    registry_ip: "192.168.56.14"
+    image_name: "learning-platform-api"
+    image_tag: "latest"
+    container_name: "learning-platform-api"
+  roles:
+    - pull_and_run
