@@ -1,5 +1,16 @@
+- name: Create app directory
+  file:
+    path: /home/vagrant/app
+    state: directory
+    mode: "0755"
 
-- name: Create /etc/docker/daemon.json if it does not exist
+- name: Deploy .env file
+  template:
+    src: env.j2
+    dest: /home/vagrant/app/.env
+    mode: "0644"
+
+- name: Configure Docker insecure registry
   copy:
     dest: /etc/docker/daemon.json
     content: |
@@ -12,23 +23,31 @@
   notify:
     - Restart Docker
 
-- name: Restart Docker service
+- name: Ensure Docker service is restarted
   systemd:
     name: docker
     state: restarted
     enabled: yes
   when: ansible_facts['distribution'] == 'Ubuntu'
 
-- name: Pull Docker image from private registry
-  shell: docker pull {{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}
-  register: pull_output
-  changed_when: "'Downloaded newer image' in pull_output.stdout or pull_output.rc == 0"
-  no_log: false
+- name: Pull Docker image
+  docker_image:
+    name: "{{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}"
+    source: pull
+    force_source: yes
 
-- name: Display pull output
-  debug:
-    var: pull_output.stdout_lines
+- name: Ensure container is stopped and removed
+  docker_container:
+    name: "{{ container_name }}"
+    state: absent
+    force_kill: yes
 
-- name: Remove existing container if running
-  shell: docker rm -f {{ container_name }}
-  ignore_errors: yes
+- name: Run application container
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: /home/vagrant/app/.env
