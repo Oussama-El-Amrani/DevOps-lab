@@ -1,0 +1,17 @@
+# Where and how to store data.
+storage:
+  dbPath: {{ mongodb_data_dir }}
+
+# Where to write logging data.
+systemLog:
+  destination: file
+  logAppend: true
+  path: {{ mongodb_log_dir }}/mongod.log
+
+# network interfaces
+net:
+  port: {{ mongodb_port }}
+  bindIp: {{ mongodb_bind_ip }},127.0.0.1
+# security
+security:
+  authorization: enabled

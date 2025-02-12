@@ -1,0 +1,22 @@
+# MongoDB connection settings
+mongodb_port: 27017
+mongodb_bind_ip: 192.168.56.10
+
+# MongoDB admin credentials
+mongodb_admin_user: "admin"
+mongodb_admin_password: "password"  # Change this in production!
+
+# Application database settings
+mongodb_app_database: "learning_platform"
+mongodb_app_user: "admin"
+mongodb_app_password: "password"  # Change this in production!
+
+# MongoDB version
+mongodb_version: "7.0"
+mongodb_package: mongodb-org
+
+# System settings
+mongodb_user: mongodb
+mongodb_group: mongodb
+mongodb_data_dir: /var/lib/mongodb
+mongodb_log_dir: /var/log/mongodb
