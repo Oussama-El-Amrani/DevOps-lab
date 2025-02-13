@@ -4,13 +4,21 @@
   become: true
   roles:
     - common
+    - docker
 
-- name: Docker Setup
-  hosts: registry, monitoring, backend
+- name:  Install Observability stack (targets)
+  hosts: registry, backend, cache, database
   remote_user: vagrant
   become: true
   roles:
-    - docker
+    - target
+
+- name:  Install Observability stack (observer)
+  hosts: monitoring
+  remote_user: vagrant
+  become: true
+  roles:
+    - observer
 
 - name: Installation of registry
   hosts: registry
