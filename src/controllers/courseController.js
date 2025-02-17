@@ -37,11 +37,7 @@ async function createCourse(req, res) {
       }
     );
 
-    await redisService.cacheData(
-      "courses:all",
-      await mongoService.findAll(getDb().collection("courses")),
-      3600
-    );
+    await redisService.publishCacheUpdateEvent("courses:all");
 
     res
       .status(201)
@@ -116,11 +112,7 @@ async function getCourseStats(req, res) {
       courses = cachedCourses;
     } else {
       courses = await mongoService.findAll(getDb().collection("courses"));
-      await redisService.cacheData(
-        "courses:all",
-        courses,
-        3600
-      );
+      await redisService.cacheData("courses:all", courses, 3600);
     }
 
     if (courses.length === 0) {
@@ -155,9 +147,7 @@ async function getCourseStats(req, res) {
  */
 async function getAllCourses(req, res) {
   try {
-    const cachedCourses = await redisService.getCachedData(
-      "courses:all"
-    );
+    const cachedCourses = await redisService.getCachedData("courses:all");
 
     let courses;
     if (cachedCourses) {
@@ -165,11 +155,7 @@ async function getAllCourses(req, res) {
       courses = cachedCourses;
     } else {
       courses = await mongoService.findAll(getDb().collection("courses"));
-      await redisService.cacheData(
-        "courses:all",
-        courses,
-        3600
-      );
+      await redisService.cacheData("courses:all", courses, 3600);
     }
 
     if (courses.length == 0) {

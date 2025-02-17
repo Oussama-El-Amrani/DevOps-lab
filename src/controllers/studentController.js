@@ -4,6 +4,7 @@ const { getDb } = require("../config/db");
 const mongoService = require("../services/mongoService");
 const redisService = require("../services/redisService");
 
+const STUDENTS = "students";
 /**
  * Create a new student
  *
@@ -22,7 +23,7 @@ async function createStudent(req, res) {
     }
 
     const newStudent = await mongoService.createDocument(
-      getDb().collection("students"),
+      getDb().collection(STUDENTS),
       {
         firstName,
         lastName,
@@ -32,11 +33,7 @@ async function createStudent(req, res) {
       }
     );
 
-    await redisService.cacheData(
-      "students:all",
-      await mongoService.findAll(getDb().collection("students")),
-      3600
-    );
+    await redisService.cacheHashDocument(STUDENTS, newStudent.insertedId, newStudent);
 
     res
       .status(201)
@@ -55,24 +52,31 @@ async function createStudent(req, res) {
  */
 async function getAllStudents(req, res) {
   try {
-    const cachedStudents = await redisService.getCachedData("students:all");
-
-    let students;
-    if (cachedStudents) {
-      console.log("Students retrieved from cache.");
-      students = cachedStudents;
-    } else {
-      students = await mongoService.findAll(getDb().collection("students"));
-      await redisService.cacheData("students:all", students, 3600);
-    }
+    let source = "cache";
+    let students = await redisService.getAllHashDocuments("courses");
 
     if (students.length === 0) {
-      res.status(404).json({ message: "No students found." });
-      return;
+      source = "database";
+      students = await mongoService.findAll(getDb().collection(STUDENTS));
+
+      if (students.length === 0) {
+        res.status(404).json({ message: "No students found." });
+        return;
+      }
+
+      await Promise.all(
+        students.map((student) =>
+          redisService.cacheHashDocument(
+            STUDENTS,
+            student._id.toString(),
+            student
+          )
+        )
+      );
     }
 
     res.status(200).json({
-      message: "Students retrieved successfully.",
+      message: `Students retrieved from ${source}`,
       count: students.length,
       data: students,
     });
@@ -97,33 +101,36 @@ async function getStudent(req, res) {
       return;
     }
 
-    const cachedStudent = await redisService.getCachedData(`student:${id}`);
+    const student = await redisService.getHashDocument(STUDENTS, id);
+    let source = "cache";
 
-    if (cachedStudent) {
-      console.log(`Student ${id} retrieved from cache.`);
-      res.status(200).json({
-        message: "Student retrieved successfully.",
-        data: cachedStudent,
-      });
-      return;
+    if (!student) {
+      source = "database";
+      student = await mongoService.findOneById(
+        getDb().collection(STUDENTS),
+        id
+      );
+
+      if (student) {
+        await redisService.cacheHashDocument(
+          STUDENTS,
+          student._id.toString(),
+          student
+        );
+      }
     }
 
-    const student = await mongoService.findOneById(
-      getDb().collection("students"),
-      id
-    );
+    if (student) {
+      res.status(200).json({
+        message: `Student retrieved successfully form ${source}`,
+        data: student,
+      });
+    }
 
     if (!student) {
       res.status(404).json({ error: "Student not found." });
       return;
     }
-
-    await redisService.cacheData(`student:${id}`, student, 3600);
-
-    res.status(200).json({
-      message: "Student retrieved successfully.",
-      data: student,
-    });
   } catch (error) {
     console.error("Error retrieving a single student by ID:", error);
     res.status(500).json({ error: "Internal Server Error." });

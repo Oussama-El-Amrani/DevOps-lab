@@ -4,7 +4,11 @@
   "description": "Projet NoSQL, ENSET Mohammedia",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon ./src/app.js"
+    "start:dev": "nodemon ./src/app.js",
+    "start:dev:all": "concurrently \"npm:start:dev\" \"npm:start:worker\"",
+    "start": "node ./src/app.js",
+    "start:worker": "node ./src/workers/cacheWorker.js",
+    "start:all": "concurrently \"npm:start\" \"npm:start:worker\""
   },
   "keywords": [
     "MongoDB",
@@ -20,6 +24,7 @@
     "mongodb": "^6.12.0",
     "redis": "^4.7.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "concurrently": "^9.1.2"
   }
 }

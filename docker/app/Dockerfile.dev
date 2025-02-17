@@ -1,0 +1,23 @@
+# Development Dockerfile
+FROM node:20-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Install global dependencies
+RUN npm install -g nodemon
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy application source
+COPY . .
+
+# Expose development port
+EXPOSE 3000
+
+# Use nodemon for live reloading in development
+CMD ["npm", "run", "start:dev:all"]

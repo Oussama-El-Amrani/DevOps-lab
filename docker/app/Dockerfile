@@ -5,13 +5,13 @@ FROM node:20-alpine AS build-stage
 WORKDIR /app
 
 # Copy package.json and package-lock.json to the working directory
-COPY package.json package-lock.json ./
+COPY ../../package.json ../../package-lock.json ./
 
 # Install dependencies (including dev dependencies)
 RUN npm install
 
 # Copy the rest of the application source code
-COPY . .
+COPY ../../ .
 
 # Stage 2: Production stage
 FROM node:20-alpine AS production-stage
@@ -41,4 +41,5 @@ USER appuser
 ENV NODE_ENV=production
 
 # Run the Node.js application when the container starts using npm start
-CMD ["node", "./src/app.js"]
+CMD ["npm", "run", "start:all"]
+

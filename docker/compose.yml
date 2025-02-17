@@ -1,0 +1,202 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile
+    container_name: learning-platform-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - cache
+    networks:
+      - private
+      - public
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - REDIS_URI=${REDIS_URI}
+      - PORT=${PORT}
+      - NODE_ENV=production
+    profiles:
+      - prod
+    restart: unless-stopped
+
+  app-dev:
+    build:
+      context: ..
+      dockerfile: docker/app/Dockerfile.dev
+    container_name: learning-platform-api-dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - cache
+    networks:
+      - private
+      - public
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - REDIS_URI=${REDIS_URI}
+      - PORT=${PORT}
+      - NODE_ENV=development
+    volumes:
+      - ../:/app # Mount host code
+      - node_modules:/app/node_modules # Preserve container modules
+    profiles:
+      - dev
+    restart: unless-stopped
+
+  # MongoDB service
+  db:
+    image: mongodb/mongodb-community-server:6.0.3-ubi8
+    container_name: mongodb-instance
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+  # Redis service
+  cache:
+    image: redis:7.4-rc2-alpine
+    container_name: redis-instance
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+  # RedisInsight service
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5555:5540"
+    environment:
+      - REDIS_HOST={redis}
+      - REDIS_PORT=${REDIS_PORT}
+    networks:
+      # we don't have any problem here this can be run just in dev profile
+      - private
+      - public
+    profiles:
+      - dev
+    restart: unless-stopped
+
+  # Monitoring system
+  prometheus:
+    image: docker.io/prom/prometheus:v3.1.0
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    command: "--config.file=/etc/prometheus/prometheus.yaml"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+  grafana:
+    image: docker.io/grafana/grafana-oss:11.4.0
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - private
+      - public
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD}
+    profiles:
+      - dev
+      - prod   
+    restart: unless-stopped
+
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    container_name: node_exporter
+    command: "--path.rootfs=/host"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    container_name: cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /run:/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod  
+    devices:
+      - /dev/kmsg
+    privileged: true
+    restart: unless-stopped
+ 
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: redis_exporter
+    environment:
+      - REDIS_ADDR=redis://cache:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - private
+    profiles:
+      - dev
+      - prod
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+    name: mongodb_data
+    driver: local
+  node_modules:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  public:
+  private:
+    internal: true
