@@ -11,6 +11,7 @@ services:
       - cache
     networks:
       - private
+      - public
     environment:
       - MONGODB_URI=${MONGODB_URI}
       - MONGODB_DB_NAME=${MONGODB_DB_NAME}
@@ -33,7 +34,6 @@ services:
       - cache
     networks:
       - private
-    # for testing purpose
       - public
     environment:
       - MONGODB_URI=${MONGODB_URI}
