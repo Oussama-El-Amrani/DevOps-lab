@@ -7,8 +7,8 @@ cache
 [backend]
 backend
 
-[monitoring]
-monitoring
+[leader]
+leader
 
 [registry]
 registry

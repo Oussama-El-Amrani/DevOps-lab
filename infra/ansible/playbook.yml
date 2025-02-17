@@ -14,7 +14,7 @@
     - target
 
 - name:  Install Observability stack (observer)
-  hosts: monitoring
+  hosts: leader
   remote_user: vagrant
   become: true
   roles:
@@ -27,8 +27,8 @@
   roles:
     - registry
 
-- name: Build and push Docker image on monitoring VM
-  hosts: monitoring
+- name: Build and push Docker image on leader VM
+  hosts: leader
   remote_user: vagrant
   become: true
   vars:
@@ -38,7 +38,8 @@
     project_dir: "/home/vagrant/learning-platform-nosql"
   roles:
     - build_and_push
-
+    
+    # TODO: Add the tmux role
 - name: Installation of databases
   hosts: database
   remote_user: vagrant

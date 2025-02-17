@@ -12,7 +12,7 @@ SERVICES = {
     ip: '192.168.56.12',
     ports: { 3000 => 3000 }
   },
-  'monitoring' => {
+  'leader' => {
     ip: '192.168.56.13',
     ports: { 3001 => 3001 }
   },
@@ -48,11 +48,11 @@ Vagrant.configure("2") do |config|
     backend.vm.network "forwarded_port", guest: 3000, host: 3000
   end
 
-  # Monitoring Server
-  config.vm.define "monitoring" do |monitoring|
-    monitoring.vm.hostname = "monitoring"
-    monitoring.vm.network "private_network", ip: SERVICES['monitoring'][:ip]
-    monitoring.vm.network "forwarded_port", guest: 3001, host: 3001
+  # leader Server
+  config.vm.define "leader" do |leader|
+    leader.vm.hostname = "leader"
+    leader.vm.network "private_network", ip: SERVICES['leader'][:ip]
+    leader.vm.network "forwarded_port", guest: 3001, host: 3001
   end  
 
   # private registry Server
