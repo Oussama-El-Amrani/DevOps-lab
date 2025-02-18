@@ -1,4 +1,10 @@
 ---
+- name: Install the tmux for managing their followers
+  ansible.builtin.apt:
+    name: tmux
+    state: latest
+    update_cache: true
+
 - name: Create Folder /srv/prometheus if not exist
   file:
     path: /srv/prometheus

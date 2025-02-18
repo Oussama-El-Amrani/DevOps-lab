@@ -38,8 +38,7 @@
     project_dir: "/home/vagrant/learning-platform-nosql"
   roles:
     - build_and_push
-    
-    # TODO: Add the tmux role
+
 - name: Installation of databases
   hosts: database
   remote_user: vagrant
