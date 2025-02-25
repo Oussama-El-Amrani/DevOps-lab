@@ -1,0 +1,5 @@
+---
+minio_download_url: "https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20250218162555.0.0_amd64.deb"
+minio_package_dest: "/tmp/minio.deb"
+minio_access_key: "MINIO_ACCESS_KEY"
+minio_secret_key: "MINIO_SECRET_KEY"

@@ -1,0 +1,40 @@
+- name: Download MinIO .deb package
+  get_url:
+    url: "{{ minio_download_url }}"
+    dest: "{{ minio_package_dest }}"
+
+- name: Install MinIO package
+  apt:
+    deb: "{{ minio_package_dest }}"
+
+- name: Ensure MinIO group exists
+  group:
+    name: "{{ minio_group }}"
+    state: present
+
+- name: Ensure MinIO user exists
+  user:
+    name: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    system: yes
+    create_home: no
+
+- name: Create MinIO directories
+  file:
+    path: "{{ minio_data_dir }}"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    mode: "0755"
+
+- name: Deploy MinIO systemd service file
+  template:
+    src: "minio.service.j2"
+    dest: "/etc/systemd/system/minio.service"
+  notify: Reload systemd
+
+- name: Enable and start MinIO service
+  systemd:
+    name: minio
+    enabled: yes
+    state: started

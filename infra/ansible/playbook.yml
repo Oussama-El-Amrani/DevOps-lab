@@ -6,8 +6,8 @@
     - common
     - docker
 
-- name:  Install Observability stack (targets)
-  hosts: registry, backend, cache, database
+- name: Install Observability stack (targets)
+  hosts: registry, backend, cache, database, minio
   remote_user: vagrant
   become: true
   roles:

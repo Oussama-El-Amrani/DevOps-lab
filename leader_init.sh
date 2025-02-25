@@ -17,6 +17,7 @@ PRIVATE_IPS[database]="192.168.56.10"
 PRIVATE_IPS[cache]="192.168.56.11"
 PRIVATE_IPS[backend]="192.168.56.12"
 PRIVATE_IPS[registry]="192.168.56.14"
+PRIVATE_IPS[minio]="192.168.56.15"
 
 # Ensure SSH directory exists on the leader VM
 ssh "$leader_ALIAS" "mkdir -p ~/.ssh"
@@ -97,6 +98,9 @@ localhost ansible_host=127.0.0.1 ansible_connection=local
 
 [registry]
 registry
+
+[minio]
+minio
 EOF
 
 # Transfer and set up Ansible files
@@ -108,7 +112,7 @@ rm -f "$TEMP_HOSTS_FILE"
 # Test connectivity from the leader VM to each VM
 echo "🔍 Testing connections from leader VM:"
 ssh "$leader_ALIAS" <<'EOF'
-declare -A PRIVATE_IPS=( ["database"]="192.168.56.10" ["cache"]="192.168.56.11" ["backend"]="192.168.56.12" ["registry"]="192.168.56.14" )
+declare -A PRIVATE_IPS=( ["database"]="192.168.56.10" ["cache"]="192.168.56.11" ["backend"]="192.168.56.12" ["registry"]="192.168.56.14" ["minio"]="192.168.56.15" )
 for host in "${!PRIVATE_IPS[@]}"; do
     echo -n "Testing SSH access to $host (${PRIVATE_IPS[$host]})... "
     ssh -o ConnectTimeout=2 -o BatchMode=yes "$host" true &>/dev/null && echo "✅ Success" || echo "❌ Failed"

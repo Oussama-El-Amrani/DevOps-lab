@@ -12,3 +12,6 @@ leader
 
 [registry]
 registry
+
+[minio]
+minio
