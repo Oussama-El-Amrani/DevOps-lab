@@ -85,4 +85,5 @@
       - userAdminAnyDatabase
       - dbAdminAnyDatabase
       - readWriteAnyDatabase
+      - backup
     state: present

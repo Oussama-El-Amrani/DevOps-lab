@@ -1,0 +1,11 @@
+mongo_backup_dir: "/var/backups/mongo"
+minio_alias: "minio"
+minio_endpoint: "http://192.168.56.15:9000"
+minio_access_key: "MINIO_ACCESS_KEY"
+minio_secret_key: "MINIO_SECRET_KEY"
+minio_backup_bucket: "mongo-backups"
+
+# TODO: never continue in this practice
+mongodb_admin_user: "admin"
+mongodb_admin_password: "password"  
+mongodb_app_database: "learning_platform"

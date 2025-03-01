@@ -13,7 +13,7 @@
   roles:
     - target
 
-- name:  Install Observability stack (observer)
+- name: Install Observability stack (observer)
   hosts: leader
   remote_user: vagrant
   become: true
@@ -64,3 +64,22 @@
     container_name: "learning-platform-api"
   roles:
     - pull_and_run
+
+- name: Install and Configure MinIO
+  hosts: minio
+  become: true
+  roles:
+    - minio
+
+- name: Configure MongoDB backups
+  hosts: database
+  remote_user: vagrant
+  become: true
+  roles:
+    - mongo_backup
+
+- hosts: all
+  tasks:
+    - name: Debug MinIO credentials
+      debug:
+        msg: "Access Key: {{ minio_access_key }}, Secret Key: {{ minio_secret_key }}"
