@@ -26,10 +26,12 @@
   register: minio_bucket_creation
   failed_when: "'already exists' not in minio_bucket_creation.stderr and minio_bucket_creation.rc != 0"
   changed_when: "'created' in minio_bucket_creation.stdout"
+  become: false
 
-- name: Set bucket public read policy (optional)
+- name: Set bucket public read policy
   ansible.builtin.command: "/usr/local/bin/mc anonymous set public {{ minio_alias }}/mongo-backups"
   ignore_errors: yes
+  become: false
 
 - name: Deploy MongoDB backup script
   ansible.builtin.template:
@@ -43,3 +45,4 @@
     minute: "0"
     hour: "2"
     job: "/usr/local/bin/mongo_backup.sh >> /var/log/mongo_backup.log 2>&1"
+    user: vagrant
