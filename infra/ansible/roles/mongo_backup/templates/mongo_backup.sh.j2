@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+# Define backup directory and filename with timestamp
+BACKUP_DIR="{{ mongo_backup_dir }}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_PATH="${BACKUP_DIR}/mongo_backup_${TIMESTAMP}"
+
+# Create backup directory
+mkdir -p "${BACKUP_PATH}"
+
+# Run mongodump with full backup (all databases)
+mongodump \
+  --username "{{ mongodb_admin_user }}" \
+  --password "{{ mongodb_admin_password }}" \
+  --authenticationDatabase "admin" \
+  --out "${BACKUP_PATH}"
+
+# Compress the backup
+tar -czf "${BACKUP_PATH}.tar.gz" -C "${BACKUP_DIR}" "mongo_backup_${TIMESTAMP}"
+rm -rf "${BACKUP_PATH}"
+
+# Upload the backup file to MinIO
+/usr/local/bin/mc cp "${BACKUP_PATH}.tar.gz" "{{ minio_alias }}/{{ minio_backup_bucket }}/"

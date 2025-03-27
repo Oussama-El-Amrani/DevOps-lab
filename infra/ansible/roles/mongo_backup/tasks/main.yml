@@ -1,0 +1,48 @@
+---
+- name: Ensure backup directory exists
+  ansible.builtin.file:
+    path: "{{ mongo_backup_dir }}"
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: "0755"
+
+- name: Download MinIO client (mc)
+  ansible.builtin.get_url:
+    url: "https://dl.min.io/client/mc/release/linux-amd64/mc"
+    dest: "/usr/local/bin/mc"
+    mode: "0755"
+
+- name: Configure MinIO client alias
+  ansible.builtin.command: >
+    /usr/local/bin/mc alias set {{ minio_alias }}
+    {{ minio_endpoint }} {{ minio_access_key }} {{ minio_secret_key }} --api S3v4
+  args:
+    creates: "/home/vagrant/.mc/config.json"
+  become: false
+
+- name: Ensure MinIO bucket exists
+  ansible.builtin.command: "/usr/local/bin/mc mb {{ minio_alias }}/mongo-backups"
+  register: minio_bucket_creation
+  failed_when: "'already exists' not in minio_bucket_creation.stderr and minio_bucket_creation.rc != 0"
+  changed_when: "'created' in minio_bucket_creation.stdout"
+  become: false
+
+- name: Set bucket public read policy
+  ansible.builtin.command: "/usr/local/bin/mc anonymous set public {{ minio_alias }}/mongo-backups"
+  ignore_errors: yes
+  become: false
+
+- name: Deploy MongoDB backup script
+  ansible.builtin.template:
+    src: mongo_backup.sh.j2
+    dest: /usr/local/bin/mongo_backup.sh
+    mode: "0755"
+
+- name: Create cron job for MongoDB backup
+  ansible.builtin.cron:
+    name: "MongoDB backup"
+    minute: "0"
+    hour: "2"
+    job: "/usr/local/bin/mongo_backup.sh >> /var/log/mongo_backup.log 2>&1"
+    user: vagrant

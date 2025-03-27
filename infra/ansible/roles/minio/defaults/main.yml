@@ -1,0 +1,10 @@
+---
+minio_user: minio
+minio_group: minio
+minio_data_dir: "/mnt/data"
+minio_console_port: 9001
+minio_api_port: 9000
+minio_binary_path: "/usr/local/bin/minio"
+
+minio_access_key: "MINIO_ACCESS_KEY"
+minio_secret_key: "MINIO_SECRET_KEY"

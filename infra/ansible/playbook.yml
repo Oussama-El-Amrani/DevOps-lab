@@ -1,0 +1,181 @@
+- name: Setup Infrastructure
+  hosts: all
+  remote_user: vagrant
+  become: true
+  roles:
+    - common
+    - docker
+
+- name: Enable UFW(firewall) to all those machine
+  hosts: all
+  become: true
+  tasks:
+    - name: Set firewall default policy
+      community.general.ufw:
+        state: enabled
+        policy: deny
+    # TODO: this role i think should be specific for just allowing the leader to connect to them in ssh
+    - name: Allow any one SSH leader and their targets
+      community.general.ufw:
+        rule: allow
+        port: "22"
+
+- name: Allow backend to access to the port 27017 of redis
+  hosts: cache
+  become: true
+  tasks:
+    - community.general.ufw:
+        rule: allow
+        src: 192.168.56.12
+        port: "6379"
+        proto: tcp
+
+- name: Allow backend and leader to access to the port 5000 of docker registry
+  hosts: registry
+  become: true
+  tasks:
+    - name: Allow access to the backend
+      community.general.ufw:
+        rule: allow
+        src: 192.168.56.12
+        port: "5000"
+        proto: tcp
+    - name: Allow access to the leader
+      community.general.ufw:
+        rule: allow
+        src: 192.168.56.13
+        port: "5000"
+        proto: tcp
+
+- name: Allow database and leader to access to the port 9000 and 9001 of minio
+  hosts: minio
+  become: true
+  tasks:
+    - name: Allow leader to MinIO API and Console
+      community.general.ufw:
+        rule: allow
+        src: 192.168.56.13
+        port: "{{item}}"
+        proto: tcp
+      loop:
+        - 9000
+        - 9001
+
+    - name: Allow database to Minio API
+      community.general.ufw:
+        rule: allow
+        src: 192.168.56.10
+        port: "9000"
+        proto: tcp
+
+- name: Allow the port of grafana of any one in the some network
+  hosts: leader
+  become: true
+  tasks:
+    - community.general.ufw:
+        rule: allow
+        src: 192.168.56.0/24
+        port: "3001"
+        proto: tcp
+
+- name: Allow leader to scrape metrics from targets
+  hosts: registry, backend, cache, database, minio
+  become: true
+  tasks:
+    - name: Open node-exporter (9100) and custom service (9101)
+      community.general.ufw:
+        rule: allow
+        src: 192.168.56.13
+        port: "{{item}}"
+        proto: tcp
+      loop:
+        - 9100
+        - 9101
+
+- name: Install Observability stack (targets)
+  hosts: registry, backend, cache, database, minio
+  remote_user: vagrant
+  become: true
+  roles:
+    - target
+
+- name: Install Observability stack (observer)
+  hosts: leader
+  remote_user: vagrant
+  become: true
+  roles:
+    - observer
+
+- name: Installation of registry
+  hosts: registry
+  remote_user: vagrant
+  become: true
+  roles:
+    - registry
+
+- name: Build and push Docker image on leader VM
+  hosts: leader
+  remote_user: vagrant
+  become: true
+  vars:
+    registry_ip: "192.168.56.14"
+    image_name: "learning-platform-api"
+    image_tag: "latest"
+    project_dir: "/home/vagrant/learning-platform-nosql"
+  roles:
+    - build_and_push
+
+- name: Installation of databases
+  hosts: database
+  remote_user: vagrant
+  become: true
+  roles:
+    - mongo
+
+- name: Allow backend to access to the port 27017 of mongo
+  hosts: database
+  become: true
+  tasks:
+    - community.general.ufw:
+        rule: allow
+        src: 192.168.56.12
+        port: "27017"
+        proto: tcp
+
+- name: Installation of cache
+  hosts: cache
+  remote_user: vagrant
+  become: true
+  roles:
+    - redis
+
+- name: Pull and run Docker image on backend
+  hosts: backend
+  remote_user: vagrant
+  become: true
+  vars:
+    registry_ip: "192.168.56.14"
+    image_name: "learning-platform-api"
+    image_tag: "latest"
+    container_name: "learning-platform-api"
+  roles:
+    - pull_and_run
+
+- name: Install and Configure MinIO
+  hosts: minio
+  become: true
+  roles:
+    - minio
+
+- name: Configure MongoDB backups
+  hosts: database
+  remote_user: vagrant
+  become: true
+  roles:
+    - mongo_backup
+
+- hosts: all
+  tasks:
+    - name: Debug MinIO credentials
+      debug:
+        msg: "Access Key: {{ minio_access_key }}, Secret Key: {{ minio_secret_key }}"

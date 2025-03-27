@@ -1,0 +1,53 @@
+- name: Create app directory
+  file:
+    path: /home/vagrant/app
+    state: directory
+    mode: "0755"
+
+- name: Deploy .env file
+  template:
+    src: env.j2
+    dest: /home/vagrant/app/.env
+    mode: "0644"
+
+- name: Configure Docker insecure registry
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "insecure-registries": ["{{ registry_ip }}:5000"]
+      }
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart Docker
+
+- name: Ensure Docker service is restarted
+  systemd:
+    name: docker
+    state: restarted
+    enabled: yes
+  when: ansible_facts['distribution'] == 'Ubuntu'
+
+- name: Pull Docker image
+  docker_image:
+    name: "{{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}"
+    source: pull
+    force_source: yes
+
+- name: Ensure container is stopped and removed
+  docker_container:
+    name: "{{ container_name }}"
+    state: absent
+    force_kill: yes
+
+- name: Run application container
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ registry_ip }}:5000/{{ image_name }}:{{ image_tag }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: /home/vagrant/app/.env

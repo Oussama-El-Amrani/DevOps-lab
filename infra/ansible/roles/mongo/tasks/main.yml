@@ -1,0 +1,89 @@
+- name: Install python3-pip
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Install pymongo
+  pip:
+    name: pymongo
+    state: present
+
+- name: Add MongoDB GPG Key
+  apt_key:
+    url: "https://pgp.mongodb.com/server-{{ mongodb_version }}.asc"
+    state: present
+
+- name: Add MongoDB Repository
+  apt_repository:
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu {{ ansible_distribution_release }}/mongodb-org/{{ mongodb_version }} multiverse"
+    state: present
+    filename: mongodb-org
+
+- name: Update APT Cache
+  apt:
+    update_cache: yes
+
+- name: Install MongoDB
+  apt:
+    name: "{{ mongodb_package }}"
+    state: latest
+
+- name: Ensure MongoDB directories exist with correct permissions
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: mongodb
+    group: mongodb
+    mode: '0755'
+  with_items:
+    - "{{ mongodb_data_dir }}"
+    - "{{ mongodb_log_dir }}"
+
+- name: Configure MongoDB
+  template:
+    src: mongod.conf.j2
+    dest: /etc/mongod.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart mongodb
+
+- name: Stop MongoDB if running
+  service:
+    name: mongod
+    state: stopped
+
+- name: Start MongoDB
+  service:
+    name: mongod
+    state: started
+    enabled: yes
+
+- name: Wait for MongoDB to be ready
+  wait_for:
+    host: "{{ mongodb_bind_ip }}"  # Change from 127.0.0.1 to the bind IP
+    port: "{{ mongodb_port }}"
+    timeout: 30
+    delay: 5
+
+- name: Check MongoDB service status
+  command: systemctl status mongod
+  register: mongodb_status
+  ignore_errors: yes
+
+- name: Debug MongoDB status
+  debug:
+    var: mongodb_status.stdout_lines
+
+- name: Create MongoDB admin user
+  mongodb_user:
+    login_port: "{{ mongodb_port }}"
+    database: admin
+    name: "{{ mongodb_admin_user }}"
+    password: "{{ mongodb_admin_password }}"
+    roles:
+      - userAdminAnyDatabase
+      - dbAdminAnyDatabase
+      - readWriteAnyDatabase
+      - backup
+    state: present

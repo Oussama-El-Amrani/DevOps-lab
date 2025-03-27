@@ -1,0 +1,79 @@
+# Service configuration reference
+SERVICES = {
+  'database' => {
+    ip: '192.168.56.10',
+    ports: { 27017 => 27017 }
+  },
+  'cache' => {
+    ip: '192.168.56.11',
+    ports: { 6379 => 6379 }
+  },
+  'backend' => {
+    ip: '192.168.56.12',
+    ports: { 3000 => 3000 }
+  },
+  'leader' => {
+    ip: '192.168.56.13',
+    ports: { 3001 => 3001 }
+  },
+  'registry' => {
+    ip: '192.168.56.14',
+    ports: { 5000 => 5000 }
+  },
+  'minio' => {
+    ip: '192.168.56.15',
+    ports: { 
+      9000 => 9000,
+      9001 => 9001
+    }
+  }
+}
+
+Vagrant.configure("2") do |config|
+  # Common configuration
+  config.vm.box = "ubuntu/jammy64"
+  # config.vm.box_version = "0.1.0"
+
+  # Database Server
+  config.vm.define "database" do |database|
+    database.vm.hostname = "database"
+    database.vm.network "private_network", ip: SERVICES['database'][:ip]
+    database.vm.network "forwarded_port", guest: 27017, host: 27017
+  end
+
+  # Cache Server
+  config.vm.define "cache" do |cache|
+    cache.vm.hostname = "cache"
+    cache.vm.network "private_network", ip: SERVICES['cache'][:ip]
+    cache.vm.network "forwarded_port", guest: 6379, host: 6379
+  end  
+
+  # Backend Server
+  config.vm.define "backend" do |backend|
+    backend.vm.hostname = "backend"
+    backend.vm.network "private_network", ip: SERVICES['backend'][:ip]
+    backend.vm.network "forwarded_port", guest: 3000, host: 3000
+  end
+
+  # leader Server
+  config.vm.define "leader" do |leader|
+    leader.vm.hostname = "leader"
+    leader.vm.network "private_network", ip: SERVICES['leader'][:ip]
+    leader.vm.network "forwarded_port", guest: 3001, host: 3001
+  end  
+
+  # private registry Server
+  config.vm.define "registry" do |registry|
+    registry.vm.hostname = "registry"
+    registry.vm.network "private_network", ip: SERVICES['registry'][:ip]
+    registry.vm.network "forwarded_port", guest: 5000, host: 5000
+  end  
+
+  # MinIO Object Storage Server S3 compatible
+  config.vm.define "minio" do |minio|
+    minio.vm.hostname = "minio"
+    minio.vm.network "private_network", ip: SERVICES['minio'][:ip]
+    minio.vm.network "forwarded_port", guest: 9000, host: 9000 # API/S3 port
+    minio.vm.network "forwarded_port", guest: 9001, host: 9001 # Web console port
+  end  
+end

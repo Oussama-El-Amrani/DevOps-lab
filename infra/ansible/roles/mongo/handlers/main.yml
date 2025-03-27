@@ -1,0 +1,18 @@
+- name: start mongodb
+  service:
+    name: mongod
+    state: started
+
+- name: restart mongodb
+  service:
+    name: mongod
+    state: restarted
+
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+    enabled: yes
+
+- name: Verify MongoDB configuration
+  command: mongod --config /etc/mongod.conf --validate
+  changed_when: false

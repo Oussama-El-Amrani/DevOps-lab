@@ -1,0 +1,9 @@
+- name: Install base application packages
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+    state: latest
+  loop:
+    - git
+    - zsh
+  become: true

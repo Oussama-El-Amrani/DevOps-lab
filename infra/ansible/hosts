@@ -1,0 +1,17 @@
+[database]
+database
+
+[cache]
+cache
+
+[backend]
+backend
+
+[leader]
+leader
+
+[registry]
+registry
+
+[minio]
+minio
